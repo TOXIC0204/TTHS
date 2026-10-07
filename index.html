@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bài Tập Ghép Nối</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#230042; --bg2:#33005c; --pink:#b5527f; --pink2:#d9689a;
+  --ink:#fff; --muted:#d8c7ee; --ok:#22c55e; --bad:#ef4444;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);
+  font-family:"Be Vietnam Pro",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow-x:hidden}
+
+/* ===== Nền tím ===== */
+.bg{position:fixed;inset:0;z-index:-1;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 40%,var(--bg2) 0%,var(--bg) 70%)}
+.blob{position:absolute;width:44vmax;height:44vmax;
+  background:linear-gradient(135deg,var(--pink),rgba(181,82,127,0));
+  filter:blur(2px);opacity:.9}
+.b1{left:-18vmax;top:-20vmax;border-radius:48% 52% 60% 40%/50% 60% 40% 50%;transform:rotate(20deg);
+  background:linear-gradient(120deg,rgba(35,0,66,0) 10%,var(--pink) 100%)}
+.b2{right:-20vmax;bottom:-22vmax;border-radius:55% 45% 40% 60%/45% 55% 45% 55%;
+  background:linear-gradient(300deg,rgba(35,0,66,0) 10%,var(--pink) 100%)}
+.rings{position:absolute;opacity:.85}
+.r1{left:-60px;bottom:-110px;width:360px}
+.r2{right:-120px;top:-120px;width:300px}
+.lines{position:absolute;right:12%;top:0;width:150px;opacity:.7}
+
+/* ===== Bố cục ===== */
+main{max-width:1280px;margin:0 auto;padding:36px 20px 40px}
+h1{margin:0;text-align:center;font-weight:800;letter-spacing:-.01em;
+  font-size:clamp(28px,4.4vw,52px);line-height:1.15;
+  text-shadow:0 4px 30px rgba(217,104,154,.45)}
+.sub{margin:12px auto 28px;max-width:640px;text-align:center;color:var(--muted);font-size:clamp(14px,1.6vw,17px);line-height:1.55}
+.board{display:grid;grid-template-columns:minmax(300px,420px) 1fr;gap:22px;align-items:start}
+@media(max-width:900px){.board{grid-template-columns:1fr}}
+
+.panel{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.18);
+  border-radius:20px;padding:16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#pool{display:grid;grid-template-columns:1fr 1fr;gap:12px;min-height:200px;align-content:start}
+#zones{display:grid;grid-template-columns:1fr 1fr;gap:14px 22px}
+@media(max-width:1100px){#zones{grid-template-columns:1fr}}
+
+/* ===== Thẻ kéo ===== */
+.card{position:relative;display:flex;align-items:center;justify-content:center;text-align:center;
+  min-height:86px;padding:26px 10px 12px;border-radius:14px;color:#fff;font-weight:700;
+  font-size:15px;line-height:1.3;cursor:grab;user-select:none;-webkit-user-select:none;touch-action:none;
+  box-shadow:0 6px 16px rgba(10,0,25,.45),inset 0 1px 0 rgba(255,255,255,.25);
+  transition:transform .15s,box-shadow .15s}
+.card:hover{transform:translateY(-2px)}
+.card:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.card .n{position:absolute;left:11px;top:7px;font-size:15px;font-weight:800;opacity:.95}
+.card.dragging{opacity:.25}
+.ghost{position:fixed;z-index:999;pointer-events:none;transform:rotate(-3deg) scale(1.05);
+  box-shadow:0 18px 36px rgba(0,0,0,.55);cursor:grabbing}
+
+/* ===== Ô thả ===== */
+.row{display:flex;align-items:center;gap:14px}
+.slot{flex:1 1 55%;min-height:98px;border:2px dashed rgba(255,255,255,.4);border-radius:14px;
+  background:rgba(255,255,255,.05);display:flex;padding:0;
+  transition:background .15s,border-color .15s,box-shadow .15s}
+.slot.over{background:rgba(217,104,154,.28);border-color:#fff;box-shadow:0 0 0 4px rgba(217,104,154,.35)}
+.slot .card{flex:1;min-height:94px;margin:2px}
+.slot.ok{border:2px solid var(--ok);box-shadow:0 0 0 4px rgba(34,197,94,.3)}
+.slot.bad{border:2px solid var(--bad);box-shadow:0 0 0 4px rgba(239,68,68,.3);animation:shake .35s}
+.slot.empty{border-color:#ffd166;box-shadow:0 0 0 4px rgba(255,209,102,.25)}
+.label{flex:1 1 45%;font-weight:700;font-size:clamp(15px,1.7vw,19px);line-height:1.35}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+
+/* ===== Nút & kết quả ===== */
+.actions{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin-top:30px}
+button{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:999px;padding:14px 28px;
+  color:#fff;cursor:pointer;transition:transform .15s,filter .15s}
+button:hover{transform:translateY(-2px);filter:brightness(1.1)}
+button:focus-visible{outline:3px solid #fff;outline-offset:3px}
+.check{background:linear-gradient(135deg,var(--pink2),#8a3cc4);box-shadow:0 8px 24px rgba(217,104,154,.5)}
+.answer{background:linear-gradient(135deg,#f59e0b,#d9689a);box-shadow:0 8px 24px rgba(245,158,11,.35)}
+.reset{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.35)}
+#result{min-height:30px;margin-top:20px;text-align:center;font-weight:700;font-size:clamp(16px,2vw,21px)}
+#result.win{color:#86efac}
+#result.part{color:#ffd166}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <div class="blob b1"></div><div class="blob b2"></div>
+  <svg class="rings r1" viewBox="0 0 300 300" fill="none" stroke="#fff"><circle cx="150" cy="150" r="140" stroke-opacity=".8"/><circle cx="150" cy="150" r="115" stroke-opacity=".7"/><circle cx="150" cy="150" r="90" stroke="#d9689a" stroke-width="10" stroke-opacity=".7"/><circle cx="150" cy="150" r="62" stroke-opacity=".8"/></svg>
+  <svg class="rings r2" viewBox="0 0 300 300" fill="none" stroke="#fff"><circle cx="150" cy="150" r="140" stroke-opacity=".8"/><circle cx="150" cy="150" r="122" stroke-opacity=".6"/></svg>
+  <svg class="lines" viewBox="0 0 150 100" stroke="#fff" fill="none"><path d="M0 100 L100 0"/><path d="M40 100 L140 0"/></svg>
+</div>
+
+<main>
+  <h1>Bài Tập Ghép Nối</h1>
+  <p class="sub">Kéo các ô màu bên trái thả vào các ô trống tương ứng bên phải. Sau đó nhấn "Kiểm tra kết quả".</p>
+
+  <div class="board">
+    <section class="panel" aria-label="Danh sách thẻ"><div id="pool"></div></section>
+    <section class="panel" aria-label="Các ô ghép"><div id="zones"></div></section>
+  </div>
+
+  <div class="actions">
+    <button class="check" id="btnCheck">Kiểm tra kết quả</button>
+    <button class="answer" id="btnAnswer">💡 Hiện đáp án</button>
+    <button class="reset" id="btnReset">↺ Làm lại</button>
+  </div>
+  <div id="result" role="status" aria-live="polite"></div>
+</main>
+
+<script>
+const CARDS=[
+  {id:1,t:"Thủ trưởng CQĐT",c:"#3b82f6"},
+  {id:2,t:"Phó viện trưởng VKS",c:"#dc2626"},
+  {id:3,t:"Cục trưởng Cục trinh sát biên phòng",c:"#f97316"},
+  {id:4,t:"Cục trưởng Cục điều tra chống buôn lậu",c:"#166534"},
+  {id:5,t:"Hạt trưởng Hạt Kiểm lâm",c:"#a855f7"},
+  {id:6,t:"Cục trưởng Cục kiểm ngư",c:"#1d4ed8"},
+  {id:7,t:"Hải đoàn trưởng",c:"#22c55e"}
+];
+// answer = id thẻ đúng
+const ZONES=[
+  {l:"Lực lượng cảnh sát biển",a:7},{l:"Cơ quan điều tra",a:1},
+  {l:"Kiểm ngư",a:6},{l:"Kiểm lâm",a:5},
+  {l:"Viện kiểm sát",a:2},{l:"Hải quan",a:4},
+  {l:"Bộ đội biên phòng",a:3}
+];
+const $=s=>document.querySelector(s);
+const pool=$('#pool'), zonesEl=$('#zones'), result=$('#result');
+const slots=[];
+
+ZONES.forEach(z=>{
+  const row=document.createElement('div');row.className='row';
+  const slot=document.createElement('div');slot.className='slot';slot.dataset.answer=z.a;
+  const lab=document.createElement('div');lab.className='label';lab.textContent=z.l;
+  row.append(slot,lab);zonesEl.appendChild(row);slots.push(slot);
+});
+
+function makeCard(d){
+  const el=document.createElement('div');
+  el.className='card';el.style.background=d.c;el.dataset.id=d.id;el.tabIndex=0;
+  el.innerHTML='<span class="n">'+d.id+'</span><span>'+d.t+'</span>';
+  el.addEventListener('pointerdown',onDown);
+  return el;
+}
+function fillPool(){CARDS.forEach(d=>pool.appendChild(makeCard(d)))}
+fillPool();
+
+let ghost=null,drag=null,hot=null;
+function clearMarks(){
+  slots.forEach(s=>s.classList.remove('ok','bad','empty'));
+  result.textContent='';result.className='';
+}
+function onDown(e){
+  if(e.button>0)return;
+  e.preventDefault();
+  const card=e.currentTarget,r=card.getBoundingClientRect();
+  drag={card,origin:card.parentElement,dx:e.clientX-r.left,dy:e.clientY-r.top};
+  ghost=card.cloneNode(true);ghost.classList.add('ghost');
+  ghost.style.width=r.width+'px';ghost.style.height=r.height+'px';
+  ghost.style.background=card.style.background;
+  document.body.appendChild(ghost);
+  card.classList.add('dragging');
+  moveGhost(e);
+  addEventListener('pointermove',onMove);
+  addEventListener('pointerup',onUp);
+  addEventListener('pointercancel',onUp);
+}
+function moveGhost(e){
+  ghost.style.left=(e.clientX-drag.dx)+'px';
+  ghost.style.top=(e.clientY-drag.dy)+'px';
+}
+function targetAt(x,y){
+  const el=document.elementFromPoint(x,y);
+  if(!el)return null;
+  return el.closest('.slot')||(el.closest('.panel #pool')?pool:null)||(el.closest('.panel')&&el.closest('.panel').contains(pool)?pool:null);
+}
+function onMove(e){
+  moveGhost(e);
+  const t=targetAt(e.clientX,e.clientY);
+  if(hot&&hot!==t)hot.classList.remove('over');
+  hot=t&&t.classList.contains('slot')?t:null;
+  if(hot)hot.classList.add('over');
+}
+function onUp(e){
+  removeEventListener('pointermove',onMove);
+  removeEventListener('pointerup',onUp);
+  removeEventListener('pointercancel',onUp);
+  const t=e.type==='pointercancel'?null:targetAt(e.clientX,e.clientY);
+  const {card,origin}=drag;
+  if(t){
+    clearMarks();
+    if(t===pool){pool.appendChild(card)}
+    else{
+      const occ=t.firstElementChild;
+      if(occ&&occ!==card){
+        // đổi chỗ: thẻ cũ về nơi thẻ đang kéo xuất phát
+        origin.appendChild(occ);
+      }
+      t.appendChild(card);
+    }
+  }
+  card.classList.remove('dragging');
+  if(hot)hot.classList.remove('over');
+  hot=null;ghost.remove();ghost=null;drag=null;
+}
+
+$('#btnCheck').addEventListener('click',()=>{
+  let ok=0,empty=0;
+  slots.forEach(s=>{
+    s.classList.remove('ok','bad','empty');
+    const c=s.firstElementChild;
+    if(!c){s.classList.add('empty');empty++;return}
+    if(+c.dataset.id===+s.dataset.answer){s.classList.add('ok');ok++}
+    else s.classList.add('bad');
+  });
+  const n=slots.length;
+  if(ok===n){result.textContent='🎉 Chính xác! Bạn ghép đúng cả '+n+'/'+n+' ô.';result.className='win'}
+  else{
+    result.className='part';
+    result.textContent='Đúng '+ok+'/'+n+' ô.'+(empty?' Còn '+empty+' ô trống.':'')+' Hãy sửa các ô đỏ rồi kiểm tra lại.';
+  }
+});
+$('#btnAnswer').addEventListener('click',()=>{
+  clearMarks();
+  const all=[...document.querySelectorAll('.card:not(.ghost)')];
+  all.forEach(c=>pool.appendChild(c));
+  slots.forEach(s=>{
+    const c=all.find(x=>+x.dataset.id===+s.dataset.answer);
+    if(c){s.appendChild(c);s.classList.add('ok')}
+  });
+  result.textContent='💡 Đây là đáp án đúng của bài tập.';
+  result.className='win';
+});
+$('#btnReset').addEventListener('click',()=>{
+  clearMarks();
+  slots.forEach(s=>{s.innerHTML=''});
+  pool.innerHTML='';fillPool();
+});
+</script>
+</body>
+</html>
